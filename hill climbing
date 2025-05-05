@@ -1,0 +1,126 @@
+hill climbing :
+
+or:
+
+import random
+import copy
+
+class Puzzle:
+    def _init_(self, board):
+        self.board = board
+        self.blank_pos = self.find_blank()
+
+    def find_blank(self):
+        for i in range(3):
+            for j in range(3):
+                if self.board[i][j] == 0:
+                    return (i, j)
+        return None
+
+    def get_possible_moves(self):
+        moves = []
+        x, y = self.blank_pos
+        if x > 0: moves.append((-1, 0))  
+        if x < 2: moves.append((1, 0))   
+        if y > 0: moves.append((0, -1))  
+        if y < 2: moves.append((0, 1))   
+        return moves
+
+    def move(self, direction):
+        x, y = self.blank_pos
+        dx, dy = direction
+        new_x, new_y = x + dx, y + dy
+        new_board = copy.deepcopy(self.board)
+        new_board[x][y], new_board[new_x][new_y] = new_board[new_x][new_y], new_board[x][y]
+        return Puzzle(new_board)
+
+    def misplaced_tiles(self, goal):
+        return sum(
+            1 for i in range(3) for j in range(3) if self.board[i][j] != 0 and self.board[i][j] != goal[i][j]
+        )
+
+    def _str_(self):
+        return '\n'.join([' '.join(map(str, row)) for row in self.board]) + '\n'
+
+    def _eq_(self, other):
+        return self.board == other.board
+
+
+def hill_climbing(start, goal):
+    current = Puzzle(start)
+    goal_puzzle = Puzzle(goal)
+    sideways_moves = 0  
+    max_sideways_moves = 5  
+    
+    while True:
+        current_heuristic = current.misplaced_tiles(goal)
+        print("Current State:")
+        print(current)
+        print(f"Heuristic Value: {current_heuristic}\n")
+        
+        if current.board == goal_puzzle.board:
+            print("Goal state reached!")
+            print(f"Final Heuristic Value: {current_heuristic}")
+            return
+        
+        neighbors = [current.move(move) for move in current.get_possible_moves()]
+        neighbors.sort(key=lambda puzzle: puzzle.misplaced_tiles(goal))
+        
+        best_neighbor = neighbors[0]
+        best_heuristic = best_neighbor.misplaced_tiles(goal)
+        
+        if best_heuristic < current_heuristic:
+            current = best_neighbor
+            sideways_moves = 0  
+        elif best_heuristic == current_heuristic and sideways_moves < max_sideways_moves:
+            current = best_neighbor
+            sideways_moves += 1  
+        else:
+            print("No better neighbor found. Stuck at local optimum.")
+            print(f"Final Heuristic Value: {current_heuristic}")
+            return
+
+print("Enter the start state (row by row, use 0 for blank):")
+start_state = [list(map(int, input().split())) for _ in range(3)]
+
+print("Enter the goal state (row by row, use 0 for blank):")
+goal_state = [list(map(int, input().split())) for _ in range(3)]
+
+hill_climbing(start_state, goal_state)
+
+
+
+input:
+
+
+Enter the start state (row by row, use 0 for blank):
+1 2 3 
+4 5 6 
+8 7 0
+Enter the goal state (row by row, use 0 for blank):
+1 2 3
+4 5 6
+7 8 0
+Current State:
+1 2 3
+4 5 6
+8 7 0
+
+Heuristic Value: 2
+
+Current State:
+1 2 3
+4 5 6
+8 0 7
+
+Heuristic Value: 2
+
+Current State:
+1 2 3
+4 5 6
+0 8 7
+
+Heuristic Value: 1
+
+No better neighbor found. Stuck at local optimum.
+Final Heuristic Value: 1
